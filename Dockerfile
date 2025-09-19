@@ -1,4 +1,4 @@
 FROM openjdk:17
-COPY ./target/classes/com/napier/devops /tmp/com/napier/devops
+COPY ./target/seMethods-1.0-SNAPSHOT-jar-with-dependencies.jar /tmp
 WORKDIR /tmp
-ENTRYPOINT ["java", "com.napier.devops.App"]
+ENTRYPOINT ["java", "-jar", "seMethods-1.0-SNAPSHOT-jar-with-dependencies.jar"]
