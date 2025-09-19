@@ -4,4 +4,4 @@ Testing
 [![Releases](https://img.shields.io/github/release/ThetHtar-Vivian/devops/all.svg?style=flat-square)](https://github.com/ThetHtar-Vivian/devops/releases)
 
 # DevOps
-![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/ThetHtar-Vivian/devops//actions/workflows/main.yml/develop?style=flat-square)
+![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/ThetHtar-Vivian/devops//actions/workflows/main.yml/branch=develop?style=flat-square)
