@@ -13,6 +13,7 @@ public class App
         // Connect to MongoDB
         // Connect to MongoDB
         MongoClient mongoClient = new MongoClient("mongo-dbserver");
+        System.out.println("Connected to the MongoDB database server");
         // Get a database - will create when we use it
         MongoDatabase database = mongoClient.getDatabase("mydb");
         // Get a collection from the database
