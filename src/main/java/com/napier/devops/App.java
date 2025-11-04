@@ -17,42 +17,31 @@ public class App
     /**
      * Connect to the MySQL database.
      */
-    public void connect()
-    {
-        try
-        {
+    public void connect(String location, int delay) {
+        try {
             // Load Database driver
             Class.forName("com.mysql.cj.jdbc.Driver");
-        }
-        catch (ClassNotFoundException e)
-        {
+        } catch (ClassNotFoundException e) {
             System.out.println("Could not load SQL driver");
             System.exit(-1);
         }
 
         int retries = 10;
-        for (int i = 0; i < retries; ++i)
-        {
+        for (int i = 0; i < retries; ++i) {
             System.out.println("Connecting to database...");
-            try
-            {
+            try {
                 // Wait a bit for db to start
-                Thread.sleep(30000);
+                Thread.sleep(delay);
                 // Connect to database
-                con = DriverManager.getConnection(
-                        "jdbc:mysql://db:3306/employees?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC",
-                        "root",
-                        "example");
+                con = DriverManager.getConnection("jdbc:mysql://" + location
+                                + "/employees?allowPublicKeyRetrieval=true&useSSL=false",
+                        "root", "example");
                 System.out.println("Successfully connected");
                 break;
-            }
-            catch (SQLException sqle)
-            {
-                System.out.println("Failed to connect to database attempt " + Integer.toString(i));
+            } catch (SQLException sqle) {
+                System.out.println("Failed to connect to database attempt " +                                  Integer.toString(i));
                 System.out.println(sqle.getMessage());
-            }
-            catch (InterruptedException ie)
-            {
+            } catch (InterruptedException ie) {
                 System.out.println("Thread interrupted? Should not happen.");
             }
         }
@@ -242,21 +231,80 @@ public class App
         }
     }
 
-    public static void main(String[] args)
-    {
-        // Create new Application
-        App a = new App();
-        // Connect to database
-        a.connect();
-//        // Get Employee
-//        Employee emp = a.getEmployee(255530);
-//        // Display results
-//        a.displayEmployee(emp);
-        // Extract employee salary information
-        ArrayList<Employee> employees = a.getAllSalaries();
+    /**
+     * Get a department by name
+     */
+    public Department getDepartment(String deptName) {
+        try {
+            Statement stmt = con.createStatement();
+            String strSelect = "SELECT dept_no, dept_name FROM departments WHERE dept_name = '" + deptName + "'";
+            ResultSet rset = stmt.executeQuery(strSelect);
 
-        // Test the size of the returned data - should be 240124
-        System.out.println(employees.size());
+            if (rset.next()) {
+                Department dept = new Department();
+                dept.dept_no = rset.getString("dept_no");
+                dept.dept_name = rset.getString("dept_name");
+                return dept;
+            } else {
+                return null;
+            }
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            System.out.println("Failed to get department details");
+            return null;
+        }
+    }
+
+    /**
+     * Get all employees in a department along with their salaries
+     */
+    public ArrayList<Employee> getSalariesByDepartment(Department dept) {
+        if (dept == null) return null;
+
+        try {
+            Statement stmt = con.createStatement();
+            String strSelect = "SELECT e.emp_no, e.first_name, e.last_name, s.salary " +
+                    "FROM employees e " +
+                    "JOIN salaries s ON e.emp_no = s.emp_no AND s.to_date = '9999-01-01' " +
+                    "JOIN dept_emp de ON e.emp_no = de.emp_no AND de.to_date = '9999-01-01' " +
+                    "WHERE de.dept_no = '" + dept.dept_no + "' " +
+                    "ORDER BY e.emp_no ASC";
+
+            ResultSet rset = stmt.executeQuery(strSelect);
+
+            ArrayList<Employee> employees = new ArrayList<>();
+            while (rset.next()) {
+                Employee emp = new Employee();
+                emp.emp_no = rset.getInt("emp_no");
+                emp.first_name = rset.getString("first_name");
+                emp.last_name = rset.getString("last_name");
+                emp.salary = rset.getInt("salary");
+                employees.add(emp);
+            }
+            return employees;
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            System.out.println("Failed to get employees for department");
+            return null;
+        }
+    }
+
+
+    public static void main(String[] args) {
+        // Create new Application and connect to database
+        App a = new App();
+
+        if(args.length < 1){
+            a.connect("localhost:33060", 30000);
+        }else{
+            a.connect(args[0], Integer.parseInt(args[1]));
+        }
+
+        Department dept = a.getDepartment("Development");
+        ArrayList<Employee> employees = a.getSalariesByDepartment(dept);
+
+
+        // Print salary report
         a.printSalaries(employees);
 
         // Disconnect from database
