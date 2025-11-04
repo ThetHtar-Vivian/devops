@@ -1,24 +1,25 @@
-name: DevOps Employees CI/CD
-
+name: DevOps CI/CD Workflow
 on:
   push:
     branches:
       - master
-      - develop
-      - devops
+      - develop   # add your devops branch if needed
+
+permissions:
+  contents: write
 
 jobs:
   UnitTests:
     name: Unit Tests
     runs-on: ubuntu-22.04
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Set up Java 17
-        uses: actions/setup-java@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v2
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -26,76 +27,68 @@ jobs:
       - name: Run Unit Tests
         run: mvn -Dtest=com.napier.devops.AppTest test
 
-      - name: Upload Code Coverage (Unit)
+      - name: CodeCov
         uses: codecov/codecov-action@v5
         with:
           directory: ./target/site/jacoco
-          flags: Unit
+          flags: Unit Tests
           verbose: true
 
   IntegrationTests:
     name: Integration Tests
     runs-on: ubuntu-22.04
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Set up Java 17
-        uses: actions/setup-java@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v2
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Build and Run DB Docker
-        run: |
-          docker build -t employees-db ./db
-          docker run --name employees -dp 33060:3306 employees-db
-          sleep 20  # wait for DB to initialize
-
       - name: Run Integration Tests
-        run: mvn -Dtest=com.napier.devops.AppIntegrationTest test
-
-      - name: Stop and Remove DB Docker
         run: |
-          docker stop employees
-          docker rm employees
-          docker image rm employees-db
+          docker compose up -d db
+          mvn -Dtest=com.napier.devops.AppIntegrationTest test
 
-      - name: Upload Code Coverage (Integration)
+      - name: Shutdown Docker
+        run: docker compose down
+
+      - name: CodeCov
         uses: codecov/codecov-action@v5
         with:
           directory: ./target/site/jacoco
-          flags: Integration
+          flags: Integration Tests
           verbose: true
 
   BuildAndRelease:
-    name: Build, Docker Compose, and Release
+    name: Build, Run in Docker, and Release
     runs-on: ubuntu-22.04
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Set up Java 17
-        uses: actions/setup-java@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v2
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Package JAR with Dependencies
-        run: mvn clean package -DskipTests
+      - name: Package and Run Docker Compose
+        run: |
+          mvn clean package -DskipTests
+          docker compose up --abort-on-container-exit
 
-      - name: Start Application via Docker Compose
-        run: docker compose up --abort-on-container-exit
-
-      - name: Create GitHub Release
-        uses: marvinpinto/action-automatic-releases@latest
+      - name: Automatic Release
+        uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
           automatic_release_tag: "latest"
-          files: ./target/devops.jar
-
+          files: |
+            ./target/devops.jar
