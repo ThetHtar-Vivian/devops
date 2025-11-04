@@ -6,6 +6,8 @@ Testing
 # DevOps
 ![GitHub Workflow Status (branch)](https://img.shields.io/github/actions/workflow/status/ThetHtar-Vivian/devops/main.yml?branch=develop&style=flat-square)
 
+[![codecov](https://codecov.io/gh/ThetHtar-Vivian/devops/graph/badge.svg?token=2OS3GHSXLU)](https://codecov.io/gh/ThetHtar-Vivian/devops)
+
 
 
 
